@@ -1,0 +1,690 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>Paper → Thread</title>
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--line:#eff3f4;--text:#0f1419;--sub:#536471;--blue:#1d9bf0;--accent:#2563eb;--border:#e5e7eb}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic",Roboto,sans-serif;-webkit-text-size-adjust:100%;line-height:1.45}
+button,select,input,textarea{font:inherit;color:inherit}
+header{padding:20px 24px 6px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;max-width:968px;margin:0 auto}
+header h1{margin:0;font-size:26px;font-weight:800;letter-spacing:-.5px}
+header h1 span{color:var(--accent)}
+header p{margin:0;color:var(--sub);font-size:13px}
+.layout{display:grid;grid-template-columns:320px minmax(0,600px);gap:24px;padding:12px 24px 60px;justify-content:center;align-items:start}
+
+.panel{background:var(--card);border-radius:16px;padding:16px;border:1px solid var(--border);position:sticky;top:12px}
+.drop{display:block;border:1.5px dashed #cbd5e1;border-radius:12px;padding:22px 12px;text-align:center;cursor:pointer;background:#fafbfc;transition:.15s}
+.drop.over{border-color:var(--accent);background:#eff6ff}
+.drop b{display:block;font-size:15px}
+.drop small{color:var(--sub)}
+.drop input{display:none}
+.drop.has b{color:var(--accent)}
+.field{margin-top:14px}
+.field>label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px}
+.seg{display:flex;background:#f1f5f9;border-radius:10px;padding:3px}
+.seg button{flex:1;border:0;background:none;padding:8px 4px;border-radius:8px;font-size:14px;cursor:pointer;color:#334155}
+.seg button.on{background:#fff;font-weight:700;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+select,.input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;font-size:14px;appearance:auto}
+.hint{font-size:12px;color:var(--sub);margin-top:6px}
+.btn{width:100%;margin-top:16px;padding:12px;border:0;border-radius:999px;background:var(--text);color:#fff;font-weight:700;font-size:15px;cursor:pointer}
+.btn:disabled{background:#a3a3a3;cursor:not-allowed}
+details.settings{margin-top:14px;border-top:1px solid var(--line);padding-top:10px;font-size:13px}
+details.settings summary{cursor:pointer;color:var(--sub);font-weight:600}
+details.settings .field{margin-top:10px}
+.err{margin-top:12px;padding:10px 12px;border-radius:10px;background:#fef2f2;color:#b91c1c;font-size:13px;display:none;white-space:pre-wrap;word-break:break-word}
+
+.timeline{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;min-width:0}
+.tbar{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);z-index:5}
+.tbar h2{flex:1;margin:0;text-align:center;font-size:17px;font-weight:700}
+.tbar .back{width:32px;height:32px;display:grid;place-items:center;font-size:20px}
+.pill{border:1px solid #cfd9de;background:#fff;border-radius:999px;padding:6px 12px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+.variant{display:flex;border-bottom:1px solid var(--line)}
+.variant:empty{display:none}
+.variant button{flex:1;border:0;background:none;padding:12px 0 10px;font-size:15px;color:var(--sub);cursor:pointer;border-bottom:3px solid transparent;font-weight:600}
+.variant button.on{color:var(--text);font-weight:800;border-bottom-color:var(--blue)}
+body.static #panelWrap{display:none}
+body.static .layout{grid-template-columns:minmax(0,600px)}
+.note{font-size:12px;color:var(--sub);padding:8px 14px;background:#f7f9f9;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.note .pill{padding:4px 10px;font-size:12px}
+
+.av{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-size:21px;flex:none;user-select:none}
+.av.lg{width:48px;height:48px;font-size:25px}
+.av.sm{width:22px;height:22px;font-size:12px}
+.verified{display:inline-block;width:17px;height:17px;vertical-align:-3px;margin-left:2px}
+[contenteditable]{outline:none;border-radius:4px}
+[contenteditable]:focus{background:#f0f7ff;box-shadow:0 0 0 2px #bfdbfe}
+.mention{color:var(--blue)}
+
+.main{padding:14px 16px 0}
+.main .who{display:flex;gap:10px;align-items:center}
+.main .nm{font-weight:700;font-size:15px}
+.main .hn{color:var(--sub);font-size:14px}
+.main .tx{font-size:17px;margin:12px 0;white-space:pre-wrap;word-break:break-word}
+.main .meta{color:var(--sub);font-size:14px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.main .meta b{color:var(--text)}
+.main .acts{padding:4px 0;border-bottom:1px solid var(--line)}
+
+.tw{display:flex;gap:10px;padding:12px 16px 4px;position:relative}
+.tw .col{display:flex;flex-direction:column;align-items:center}
+.tw .rail{flex:1;width:2px;background:#cfd9de;margin-top:4px;min-height:8px}
+.tw .body{flex:1;min-width:0}
+.tw .hd{font-size:15px;line-height:1.3;display:flex;flex-wrap:wrap;align-items:center;gap:0 4px}
+.tw .hd .nm{font-weight:700}
+.tw .hd .hn{color:var(--sub)}
+.tw .tx{font-size:15px;white-space:pre-wrap;word-break:break-word;margin-top:2px}
+.acts{display:flex;justify-content:space-between;max-width:440px;color:var(--sub);font-size:13px}
+.act{display:flex;align-items:center;gap:4px;background:none;border:0;padding:8px 6px 8px 0;cursor:pointer;color:inherit}
+.act svg{width:18px;height:18px}
+.act.reply:hover{color:var(--blue)}
+.act.rt:hover,.act.rt.on{color:#00ba7c}
+.act.like:hover,.act.like.on{color:#f91880}
+.act.like.on svg{fill:#f91880}
+
+.qa-toggle{margin:0 16px 8px 66px;border:0;background:none;color:var(--blue);font-size:14px;cursor:pointer;padding:4px 0}
+.sub{margin-left:36px;border-left:2px solid #e5e7eb}
+.sub .tw{padding-left:12px}
+.post-wrap{border-bottom:1px solid var(--line)}
+.post-wrap.chain{border-bottom:0}
+
+.composer{margin:6px 16px 12px 66px;background:#f7f9f9;border-radius:14px;padding:10px 12px}
+.sub .composer{margin-left:46px}
+.composer .to{font-size:13px;color:var(--sub);margin-bottom:6px}
+.composer textarea{width:100%;min-height:76px;border:2px solid var(--blue);border-radius:12px;padding:10px;font-size:15px;resize:vertical;background:#fff}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center;font-size:13px;color:var(--sub)}
+.chip{display:flex;align-items:center;gap:6px;border:1px solid #cfd9de;background:#fff;border-radius:999px;padding:4px 10px 4px 4px;cursor:pointer;font-size:13px;color:#334155}
+.composer .row{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
+.composer .send{background:var(--blue);color:#fff;border:0;border-radius:999px;padding:8px 18px;font-weight:700;cursor:pointer}
+.composer .cancel{background:none;border:0;color:var(--sub);cursor:pointer}
+.typing{color:var(--sub);font-size:14px;padding:6px 16px 12px 66px}
+.sub .typing{padding-left:58px}
+.typing i{display:inline-block;width:6px;height:6px;border-radius:50%;background:#94a3b8;margin-right:3px;animation:b 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes b{0%,80%,100%{opacity:.25}40%{opacity:1}}
+.skeleton{padding:40px 16px;text-align:center;color:var(--sub)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#0f1419;color:#fff;padding:10px 16px;border-radius:999px;font-size:14px;opacity:0;transition:.2s;pointer-events:none;z-index:50}
+.toast.on{opacity:1}
+details.panel-wrap>summary{display:none;list-style:none;cursor:pointer;padding:12px 16px;background:var(--card);border-top:1px solid var(--border);border-bottom:1px solid var(--border);font-weight:700;font-size:14px;justify-content:space-between}
+details.panel-wrap>summary::-webkit-details-marker{display:none}
+details.panel-wrap .chev{display:inline-block;transition:transform .2s}
+
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr;padding:6px 0 60px;gap:10px}
+  .panel{position:static;border-radius:0;border-left:0;border-right:0}
+  .timeline{border-radius:0;border-left:0;border-right:0}
+  header{padding:14px 16px 2px}
+  header h1{font-size:22px}
+  details.panel-wrap>summary{display:flex}
+  details.panel-wrap[open]>summary .chev{transform:rotate(180deg)}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Paper <span>→</span> Thread</h1>
+  <p>논문 내용을 탐라처럼. Drop a PDF, get the thread it deserves.</p>
+</header>
+
+<div class="layout">
+  <details class="panel-wrap" id="panelWrap" open>
+    <summary><span>📄 새 논문으로 스레드 만들기</span><span class="chev">▾</span></summary>
+    <aside class="panel">
+      <label class="drop" id="drop">
+        <input type="file" id="file" accept="application/pdf,.pdf">
+        <b id="dropTitle">Drop a paper PDF here</b>
+        <small id="dropSub">or tap to choose a file</small>
+      </label>
+
+      <div class="field">
+        <label>Thread language</label>
+        <div class="seg" id="lang">
+          <button data-v="ko" class="on">한국어</button>
+          <button data-v="en">English</button>
+          <button data-v="paper">Paper's</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="tone">Community vibe (말투)</label>
+        <select id="tone"></select>
+        <div class="hint" id="toneHint"></div>
+      </div>
+
+      <div class="field">
+        <label for="persona">Who posts it</label>
+        <select id="persona">
+          <option value="auto">Best fit for this paper</option>
+          <option value="grad">대학원생 / grad student</option>
+          <option value="undergrad">과제하다 빠진 학부생 / undergrad</option>
+          <option value="pi">교수 / PI</option>
+          <option value="industry">업계 현직자 / industry practitioner</option>
+          <option value="scicomm">과학 커뮤니케이터 / science communicator</option>
+          <option value="animal">귀여운 동물 계정 / cute animal account</option>
+          <option value="meme">밈 계정 / meme account</option>
+          <option value="author">논문 저자 본인 / the author</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="length">Thread length</label>
+        <select id="length">
+          <option value="auto">Let the paper decide</option>
+          <option value="short">Short (3–5)</option>
+          <option value="medium">Medium (6–9)</option>
+          <option value="long">Long (10–15)</option>
+        </select>
+      </div>
+
+      <button class="btn" id="gen" disabled>Generate thread</button>
+      <div class="hint" id="genHint">PDF를 넣으면 시작할 수 있어요. 지금 보이는 스레드는 노브레인 보고서 예시예요.</div>
+      <div class="err" id="err"></div>
+
+      <details class="settings" id="settings">
+        <summary>API 설정</summary>
+        <div class="field">
+          <label for="key">Anthropic API key</label>
+          <input class="input" id="key" type="password" placeholder="sk-ant-..." autocomplete="off">
+          <div class="hint" id="keyHint">이 기기 브라우저에만 저장돼요.</div>
+        </div>
+        <div class="field">
+          <label for="model">Model</label>
+          <input class="input" id="model" list="models" placeholder="claude-sonnet-4-5">
+          <datalist id="models"></datalist>
+        </div>
+        <button class="pill" id="resetPreset" style="margin-top:12px">노브레인 예시 스레드 다시 불러오기</button>
+      </details>
+    </aside>
+  </details>
+
+  <main class="timeline">
+    <div class="tbar">
+      <div class="back">‹</div>
+      <h2>게시</h2>
+      <button class="pill" id="copy">Copy text</button>
+    </div>
+    <div class="variant" id="variant"></div>
+    <div class="note" id="note">
+      <span id="noteText">이름, 핸들, 글을 눌러서 수정할 수 있어요. 💬를 누르면 멘션으로 질문할 수 있어요.</span>
+      <button class="pill" id="expandAll">Q&A 모두 펼치기</button>
+    </div>
+    <div id="thread"><div class="skeleton">불러오는 중…</div></div>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>window.STATIC = true;</script>
+<script src="preset.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const ME = { name: '나', handle: 'me', emoji: '🙂', colors: ['#f1f5f9', '#cbd5e1'] };
+const LS = { key: 'pt_key', model: 'pt_model', thread: 'pt_thread_v1' };
+
+const ANTI_SLOP = `Write like a real person typing on their phone, not like a content marketer or an AI.
+Never use: "🧵", "A thread", "Let's dive in", "Buckle up", "Here's why it matters", "game-changer", "This changes everything", "mind-blowing", "Key takeaways", "In conclusion", "TL;DR:" headers (unless the vibe uses them), em dashes (—), or a label-colon opener on every post ("핵심 결과:", "결론:").
+Korean: avoid "~에 대해 알아보자", "충격적인", "놀라운 사실", "결론부터 말하자면", formal 합니다체 (unless the vibe calls for it), ending every post with an emoji, and stiff translationese.
+Vary rhythm: some posts are one line, some have line breaks. Opinions, mild snark, hedging and asides are fine. Emojis sparingly or not at all. No hashtags unless the vibe uses them.`;
+
+const TONES = {
+  ko: [
+    ['auto', '자동 (논문이랑 계정에 맞게)', 'Pick the Korean online register that best fits the paper and the poster. Default to casual Korean Twitter 탐라 style.'],
+    ['x', '트위터(X) 탐라체', 'Korean Twitter timeline voice: 반말 음슴체 (~함, ~임, ~듯, ~더라), short lines with frequent line breaks, almost no periods, ㅋㅋ/ㅠ occasionally, sounds like muttering to followers. Light 드립 OK.'],
+    ['dc', '디시인사이드 갤러리체', 'DCInside gallery post voice: blunt 반말, "ㄹㅇ", "ㅇㅇ", "개-" intensifier, "~더라", "~냐?", "팩트)", "3줄요약" at the end, cynical but informative. Do NOT use hateful or bigoted slang (no ~노 endings, no slurs).'],
+    ['theqoo', '더쿠체', 'theqoo voice: excited reactions, "와 미친", "ㅠㅠㅠ", "~인 거 실화냐", "개웃김", "나만 이거 웃겨?", "덬들아", lots of feeling words, gossip-like enthusiasm about the findings.'],
+    ['clien', '클리앙체', 'Clien voice: polite but chatty 40s IT 아재, "~네요", "~더군요", "~입니다만", calm, slightly dry humor, occasional "ㅎㅎ", references to work and gadgets.'],
+    ['ruli', '루리웹체', 'Ruliweb voice: subculture/gamer humor, anime/game analogies, "ㄹㅇ루", "이게 왜 ~?", "~하는 만화", playful 드립 and self-aware nerdiness.'],
+    ['blind', '블라인드체', 'Blind (Korean workplace app) voice: office-worker 음슴체, "현직자인데", salary/company/연봉 analogies, tired and slightly cynical, "~함 ㅇㅇ".'],
+    ['grad', '김박사넷 / 대학원생체', 'Korean grad student community voice: self-deprecating, 교수님/랩미팅/리비전/디펜스 jokes, "~하는 거 나만 찔림?", tired but nerdy, cites figures and tables like "Table 3 보면".'],
+    ['natepann', '네이트판체', 'Nate Pann voice: storytelling, "~했음", "방탈 죄송", "음슴체로 쓸게요", dramatic build-up, ends posts with cliffhangers like "근데 여기서 반전".'],
+  ],
+  en: [
+    ['auto', 'Auto (fits the paper)', 'Pick the English online register that best fits the paper and the poster. Default to casual science Twitter.'],
+    ['acadx', 'Academic Twitter / Bluesky', 'Academic Twitter voice: mostly lowercase, self-deprecating, "ok so", "(n=312!)", "reviewer 2 would hate this", nerdy enthusiasm, cites Table/Fig numbers.'],
+    ['reddit', 'Reddit', 'Redditor voice: "Okay so I actually read the paper", skeptical of sample size, "correlation ≠ causation" energy, "Edit:" asides, parenthetical caveats, ends with a TL;DR line.'],
+    ['hn', 'Hacker News', 'Hacker News voice: dry, technical, no emojis, "The interesting bit is...", nitpicks methodology, mentions prior work, slightly contrarian.'],
+    ['tumblr', 'Tumblr', 'Tumblr voice: lowercase, chaotic, sudden ALL CAPS, "im losing my mind", "the way that", jokes as tags-like asides in parentheses.'],
+    ['genz', 'TikTok / Gen Z', 'Gen Z voice: "no bc", "it\'s giving", "lowkey", "the way that", "not the researchers...", "💀" sparingly, short punchy lines.'],
+    ['greentext', '4chan greentext', 'Greentext style: lines starting with ">", ">be researcher", ">mfw", deadpan absurd framing of the study. No slurs or hateful content.'],
+    ['linkedin', 'LinkedIn (parody)', 'LinkedIn parody voice: "I\'m humbled to share", one-sentence paragraphs, turns every finding into a leadership lesson, "Agree?" at the end.'],
+  ],
+};
+
+const PERSONA = {
+  auto: 'whoever would most naturally post this paper', grad: 'a grad student in the field', undergrad: 'an undergrad who fell down the rabbit hole while doing coursework',
+  pi: 'a professor / PI', industry: 'an industry practitioner', scicomm: 'a science communicator', animal: 'a cute animal-themed account (the animal "reads papers")',
+  meme: 'a meme account', author: 'the paper\'s own author',
+};
+const LENGTH = { auto: 'as many posts as the paper deserves (usually 5–12)', short: '3–5 posts', medium: '6–9 posts', long: '10–15 posts' };
+
+const S = { thread: null, pdf: null, lang: 'ko', open: new Set(), expandAll: false, composerFor: null, typingFor: null, serverKey: false, busy: false };
+
+/* ---------- helpers ---------- */
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const uid = () => Math.random().toString(36).slice(2, 10);
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 1800); }
+function showErr(msg) { const e = $('#err'); e.textContent = msg || ''; e.style.display = msg ? 'block' : 'none'; }
+function lang() { return (S.thread && S.thread.lang) || 'ko'; }
+function fmt(n) {
+  n = Math.max(0, Math.round(n || 0));
+  if (lang() === 'en') {
+    if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+    if (n >= 1e4) return Math.round(n / 1e3) + 'K';
+    if (n >= 1e3) return (n / 1e3).toFixed(1).replace(/\.0$/, '') + 'K';
+    return String(n);
+  }
+  if (n >= 1e4) return (n / 1e4).toFixed(n >= 1e5 ? 0 : 1).replace(/\.0$/, '') + '만';
+  if (n >= 1e3) return (n / 1e3).toFixed(1).replace(/\.0$/, '') + '천';
+  return String(n);
+}
+function grad(c) { const [a, b] = (c && c.length ? c : ['#c7d2fe', '#818cf8']); return `background:linear-gradient(135deg,${a},${b || a})`; }
+function accounts() { const t = S.thread; return t ? [t.author, ...(t.cast || [])] : []; }
+function acc(handle) { if (handle === 'me') return ME; if (!handle) return S.thread.author; return accounts().find(a => a.handle === handle) || { name: handle, handle, emoji: '👤', colors: ['#e5e7eb', '#9ca3af'] }; }
+function linkify(text) { return esc(text).replace(/@([A-Za-z0-9_]{1,30})/g, '<span class="mention">@$1</span>'); }
+function save() { try { localStorage.setItem(LS.thread, JSON.stringify(S.thread)); } catch {} }
+
+function findNode(id, list = S.thread.posts, parent = null) {
+  for (const n of list) {
+    if (n.id === id) return { node: n, parent };
+    const r = findNode(id, n.replies || [], n);
+    if (r) return r;
+  }
+  return null;
+}
+function rootPostOf(id) { for (const p of S.thread.posts) if (p.id === id || findNode(id, p.replies || [])) return p; return null; }
+function countAll(list) { return (list || []).reduce((s, n) => s + 1 + countAll(n.replies), 0); }
+
+const ICON = {
+  reply: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12a7 7 0 0 1 7-7h2a7 7 0 0 1 0 14H8l-4 3v-4.5A7 7 0 0 1 4 12z"/></svg>',
+  rt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 7h10v6M17 17H7v-6M4 10l3-3 3 3M20 14l-3 3-3-3"/></svg>',
+  like: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>',
+  bm: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 4h12v16l-6-4-6 4z"/></svg>',
+  views: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 20V12M10 20V6M15 20v-9M20 20V9"/></svg>',
+  share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 4v11M7 9l5-5 5 5M5 14v5h14v-5"/></svg>',
+  check: '<svg class="verified" viewBox="0 0 24 24"><path fill="#1d9bf0" d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484z"/><path fill="#fff" d="M10.54 16.2l-3.7-3.7 1.4-1.42 2.3 2.3 4.9-5.3 1.48 1.36z"/></svg>',
+};
+
+/* ---------- render ---------- */
+function actsHtml(n, big) {
+  const m = n.metrics || {};
+  const liked = n.liked ? ' on' : '', rted = n.rted ? ' on' : '';
+  const r = (m.replies || 0) + (n.replies ? n.replies.filter(x => x.by === 'me').length : 0);
+  if (big) return `<div class="acts">
+    <button class="act reply" data-act="reply" data-id="${n.id}">${ICON.reply}<span>${r ? fmt(r) : ''}</span></button>
+    <button class="act rt${rted}" data-act="rt" data-id="${n.id}">${ICON.rt}<span>${fmt((m.reposts || 0) + (n.rted ? 1 : 0))}</span></button>
+    <button class="act like${liked}" data-act="like" data-id="${n.id}">${ICON.like}<span>${fmt((m.likes || 0) + (n.liked ? 1 : 0))}</span></button>
+    <button class="act" data-act="bm" data-id="${n.id}">${ICON.bm}<span>${fmt(m.bookmarks || 0)}</span></button>
+    <button class="act" data-act="share">${ICON.share}</button></div>`;
+  return `<div class="acts">
+    <button class="act reply" data-act="reply" data-id="${n.id}">${ICON.reply}<span>${r ? fmt(r) : ''}</span></button>
+    <button class="act rt${rted}" data-act="rt" data-id="${n.id}">${ICON.rt}<span>${(m.reposts || n.rted) ? fmt((m.reposts || 0) + (n.rted ? 1 : 0)) : ''}</span></button>
+    <button class="act like${liked}" data-act="like" data-id="${n.id}">${ICON.like}<span>${(m.likes || n.liked) ? fmt((m.likes || 0) + (n.liked ? 1 : 0)) : ''}</span></button>
+    <button class="act" data-act="views">${ICON.views}<span>${m.views ? fmt(m.views) : ''}</span></button>
+    <button class="act" data-act="share">${ICON.share}</button></div>`;
+}
+
+function headHtml(a, ago, cls = '') {
+  const editable = a.handle !== 'me';
+  return `<span class="nm" ${editable ? `contenteditable="plaintext-only" data-edit="name" data-acc="${esc(a.handle)}"` : ''}>${esc(a.name)}</span>${a.verified ? ICON.check : ''}
+    <span class="hn">@<span ${editable ? `contenteditable="plaintext-only" data-edit="handle" data-acc="${esc(a.handle)}"` : ''}>${esc(a.handle)}</span>${ago ? ' · ' + esc(ago) : ''}</span>`;
+}
+
+function postAgo() { return S.thread.ago || (lang() === 'en' ? '3h' : '3시간'); }
+
+function mainMeta() {
+  const t = S.thread, d = new Date(t.posted_at || Date.now() - 3 * 36e5);
+  const v = fmt((t.posts[0].metrics || {}).views || 0);
+  if (lang() === 'en') {
+    const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    const date = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    return `${time} · ${date} · <b>${v}</b> Views`;
+  }
+  const h = d.getHours(), ap = h < 12 ? '오전' : '오후', hh = (h % 12) || 12, mm = String(d.getMinutes()).padStart(2, '0');
+  return `${ap} ${hh}:${mm} · ${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 · 조회 <b>${v}</b>회`;
+}
+
+function nodeHtml(n, depth) {
+  const a = acc(n.by);
+  let h = `<div class="tw" data-node="${n.id}">
+    <div class="col"><div class="av" style="${grad(a.colors)}">${esc(a.emoji)}</div></div>
+    <div class="body"><div class="hd">${headHtml(a, n.ago)}</div>
+      <div class="tx" contenteditable="plaintext-only" data-edit="text" data-id="${n.id}">${linkify(n.text)}</div>
+      ${actsHtml(n)}</div></div>`;
+  h += composerHtml(n);
+  if (S.typingFor === n.id) h += typingHtml();
+  if (n.replies && n.replies.length) h += `<div class="sub">${n.replies.map(r => nodeHtml(r, depth + 1)).join('')}</div>`;
+  return h;
+}
+
+function typingHtml() { return `<div class="typing"><i></i><i></i><i></i> ${lang() === 'en' ? 'replying…' : '답글 쓰는 중…'}</div>`; }
+
+function composerHtml(n) {
+  if (S.composerFor !== n.id) return '';
+  const a = acc(n.by);
+  const chips = [S.thread.author, ...(S.thread.cast || [])].map(c =>
+    `<button class="chip" data-chip="${esc(c.handle)}"><span class="av sm" style="${grad(c.colors)}">${esc(c.emoji)}</span>@${esc(c.handle)}</button>`).join('');
+  const en = lang() === 'en';
+  return `<div class="composer" data-composer="${n.id}">
+    <div class="to">${en ? 'Replying to' : '답글 대상'} <span class="mention">@${esc(a.handle)}</span></div>
+    <textarea id="cmpText" placeholder="${en ? 'Ask something about the paper' : '논문에 대해 물어보기'}">${S.draft != null ? esc(S.draft) : a.handle !== 'me' ? '@' + esc(a.handle) + ' ' : ''}</textarea>
+    <div class="chips">${en ? 'Mention' : '멘션'} ${chips}</div>
+    <div class="row"><button class="cancel" data-act="cancel">${en ? 'Cancel' : '취소'}</button><button class="send" data-act="send" data-id="${n.id}">${en ? 'Reply' : '답글'}</button></div>
+  </div>`;
+}
+
+function render() {
+  const t = S.thread, root = $('#thread');
+  if (!t) { root.innerHTML = '<div class="skeleton">PDF를 넣고 Generate를 눌러주세요.</div>'; return; }
+  const a = t.author, p0 = t.posts[0];
+  let h = `<div class="post-wrap"><div class="main">
+    <div class="who"><div class="av lg" style="${grad(a.colors)}">${esc(a.emoji)}</div>
+      <div><div class="nm"><span contenteditable="plaintext-only" data-edit="name" data-acc="${esc(a.handle)}">${esc(a.name)}</span>${a.verified ? ICON.check : ''}</div>
+      <div class="hn">@<span contenteditable="plaintext-only" data-edit="handle" data-acc="${esc(a.handle)}">${esc(a.handle)}</span></div></div></div>
+    <div class="tx" contenteditable="plaintext-only" data-edit="text" data-id="${p0.id}">${linkify(p0.text)}</div>
+    <div class="meta">${mainMeta()}</div>
+    ${actsHtml(p0, true)}
+  </div>`;
+  h += composerHtml(p0) + (S.typingFor === p0.id ? typingHtml() : '') + repliesBlock(p0) + `</div>`;
+
+  for (const p of t.posts.slice(1)) {
+    h += `<div class="post-wrap"><div class="tw" data-node="${p.id}">
+      <div class="col"><div class="av" style="${grad(a.colors)}">${esc(a.emoji)}</div></div>
+      <div class="body"><div class="hd">${headHtml(a, postAgo())}</div>
+        <div class="tx" contenteditable="plaintext-only" data-edit="text" data-id="${p.id}">${linkify(p.text)}</div>
+        ${actsHtml(p)}</div></div>`;
+    h += composerHtml(p) + (S.typingFor === p.id ? typingHtml() : '') + repliesBlock(p) + `</div>`;
+  }
+  root.innerHTML = h;
+  if (window.STATIC) root.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
+  const vs = window.PRESETS || [];
+  $('#variant').innerHTML = vs.length > 1 ? vs.map(v => `<button data-variant="${v.key}" class="${t.preset && t.key === v.key ? 'on' : ''}">${esc(v.label)}</button>`).join('') : '';
+  $('#expandAll').textContent = S.expandAll ? 'Q&A 모두 접기' : 'Q&A 모두 펼치기';
+  $('#expandAll').style.display = t.posts.some(p => (p.replies || []).length) ? '' : 'none';
+}
+
+function repliesBlock(p) {
+  const n = countAll(p.replies);
+  if (!n) return '';
+  const open = S.expandAll || S.open.has(p.id);
+  const qs = (p.replies || []).length;
+  const en = lang() === 'en';
+  const label = open ? (en ? 'Hide replies' : '답글 숨기기') : (en ? `Show ${qs} question${qs > 1 ? 's' : ''} · ${n} replies` : `질문 ${qs}개 · 답글 ${n}개 보기`);
+  return `<button class="qa-toggle" data-act="toggle" data-id="${p.id}">${open ? '▴' : '▾'} ${label}</button>` +
+    (open ? `<div class="sub">${p.replies.map(r => nodeHtml(r, 1)).join('')}</div>` : '');
+}
+
+/* ---------- interactions ---------- */
+function loadVariant(key) {
+  const v = (window.PRESETS || []).find(x => x.key === key) || window.PRESET;
+  if (!v) return;
+  S.thread = structuredClone(v); S.pdf = null; S.open.clear(); S.expandAll = false; S.composerFor = null;
+  if (window.STATIC) history.replaceState(null, '', '#' + v.key); else save();
+  render();
+}
+
+document.addEventListener('click', async e => {
+  const vb = e.target.closest('[data-variant]');
+  if (vb) { loadVariant(vb.dataset.variant); $('.timeline').scrollIntoView(); return; }
+  const b = e.target.closest('[data-act],[data-chip]');
+  if (!b) return;
+  if (b.dataset.chip) {
+    const ta = $('#cmpText'); const tag = '@' + b.dataset.chip + ' ';
+    if (!ta.value.includes('@' + b.dataset.chip)) ta.value = (ta.value.trimEnd() + ' ' + tag).trimStart();
+    ta.focus(); return;
+  }
+  const id = b.dataset.id, act = b.dataset.act;
+  if (act === 'toggle') { S.open.has(id) ? S.open.delete(id) : S.open.add(id); render(); return; }
+  if (act === 'reply') {
+    if (window.STATIC) { const rp = rootPostOf(id); if (rp) { S.open.add(rp.id); render(); } return; }
+    S.composerFor = S.composerFor === id ? null : id; S.draft = null;
+    const rp = rootPostOf(id); if (rp && rp.id !== id) S.open.add(rp.id);
+    render();
+    const ta = $('#cmpText'); if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+    return;
+  }
+  if (act === 'cancel') { S.composerFor = null; render(); return; }
+  if (act === 'like' || act === 'rt') { const f = findNode(id); if (f) { const k = act === 'like' ? 'liked' : 'rted'; f.node[k] = !f.node[k]; save(); render(); } return; }
+  if (act === 'send') { sendReply(id); return; }
+});
+
+document.addEventListener('focusout', e => {
+  const el = e.target.closest && e.target.closest('[data-edit]');
+  if (!el || !S.thread) return;
+  const v = el.innerText.trim();
+  const kind = el.dataset.edit;
+  if (kind === 'text') { const f = findNode(el.dataset.id); if (f && v) f.node.text = v; }
+  else {
+    const a = accounts().find(x => x.handle === el.dataset.acc);
+    if (!a || !v) return render();
+    if (kind === 'name') a.name = v;
+    if (kind === 'handle') {
+      const nh = v.replace(/^@/, '').replace(/[^A-Za-z0-9_]/g, '').slice(0, 15) || a.handle, old = a.handle;
+      a.handle = nh;
+      const walk = l => (l || []).forEach(n => { if (n.by === old) n.by = nh; n.text = n.text.split('@' + old).join('@' + nh); walk(n.replies); });
+      walk(S.thread.posts);
+    }
+  }
+  save(); render();
+});
+document.addEventListener('keydown', e => {
+  if (e.target.matches('[data-edit="name"],[data-edit="handle"]') && e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
+  if (e.target.id === 'cmpText' && e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); sendReply(S.composerFor); }
+});
+
+$('#expandAll').onclick = () => { S.expandAll = !S.expandAll; if (!S.expandAll) S.open.clear(); render(); };
+
+function copyText(text) {
+  if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text);
+  const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); return Promise.resolve();
+}
+$('#copy').onclick = () => {
+  if (!S.thread) return;
+  copyText(S.thread.posts.map(p => p.text).join('\n\n')).then(() => toast(lang() === 'en' ? 'Copied' : '복사했어요'));
+};
+
+/* ---------- panel ---------- */
+function fillTones() {
+  const sel = $('#tone'), prev = sel.value;
+  const groups = S.lang === 'paper' ? ['ko', 'en'] : [S.lang];
+  sel.innerHTML = groups.map(g => {
+    const opts = TONES[g].map(([v, l]) => `<option value="${g}:${v}">${esc(l)}</option>`).join('');
+    return groups.length > 1 ? `<optgroup label="${g === 'ko' ? '한국어 커뮤니티' : 'English communities'}">${opts}</optgroup>` : opts;
+  }).join('');
+  if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
+  toneHint();
+}
+function toneObj() { const [g, v] = $('#tone').value.split(':'); return { group: g, ...Object.fromEntries([['id', v], ['label', TONES[g].find(t => t[0] === v)[1]], ['guide', TONES[g].find(t => t[0] === v)[2]]]) }; }
+function toneHint() { $('#toneHint').textContent = $('#tone').value.endsWith(':auto') ? '' : '실제 커뮤니티 말투를 흉내 내요. 혐오 표현은 빼고요.'; }
+$('#tone').onchange = toneHint;
+$('#lang').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  S.lang = b.dataset.v; [...$('#lang').children].forEach(x => x.classList.toggle('on', x === b)); fillTones();
+};
+
+function setFile(f) {
+  if (!f) return;
+  if (f.type !== 'application/pdf' && !/\.pdf$/i.test(f.name)) { showErr('PDF 파일만 넣을 수 있어요.'); return; }
+  if (f.size > 30 * 1024 * 1024) { showErr('30MB 이하 PDF만 돼요.'); return; }
+  const r = new FileReader();
+  r.onload = () => {
+    S.pdf = { name: f.name, b64: String(r.result).split(',')[1] };
+    $('#drop').classList.add('has'); $('#dropTitle').textContent = f.name; $('#dropSub').textContent = (f.size / 1024 / 1024).toFixed(1) + ' MB · tap to change';
+    $('#gen').disabled = false; $('#genHint').textContent = 'Ready. 보통 30초~1분 걸려요.'; showErr('');
+  };
+  r.readAsDataURL(f);
+}
+$('#file').onchange = e => setFile(e.target.files[0]);
+['dragenter', 'dragover'].forEach(ev => $('#drop').addEventListener(ev, e => { e.preventDefault(); $('#drop').classList.add('over'); }));
+['dragleave', 'drop'].forEach(ev => $('#drop').addEventListener(ev, e => { e.preventDefault(); $('#drop').classList.remove('over'); }));
+$('#drop').addEventListener('drop', e => setFile(e.dataTransfer.files[0]));
+
+$('#key').value = localStorage.getItem(LS.key) || '';
+$('#model').value = localStorage.getItem(LS.model) || '';
+$('#key').onchange = () => { localStorage.setItem(LS.key, $('#key').value.trim()); loadModels(); };
+$('#model').onchange = () => localStorage.setItem(LS.model, $('#model').value.trim());
+
+/* ---------- API ---------- */
+function headers() { const h = { 'content-type': 'application/json' }; const k = $('#key').value.trim(); if (k) h['x-user-key'] = k; return h; }
+async function loadModels() {
+  try {
+    const r = await fetch('/api/models', { headers: headers() });
+    if (!r.ok) return;
+    const j = await r.json(); const ids = (j.data || []).map(m => m.id);
+    $('#models').innerHTML = ids.map(i => `<option value="${esc(i)}">`).join('');
+    if (!$('#model').value) { const pick = ids.find(i => /sonnet/.test(i)) || ids[0]; if (pick) { $('#model').value = pick; localStorage.setItem(LS.model, pick); } }
+  } catch {}
+}
+async function claude({ system, content, max_tokens = 8000 }) {
+  const model = $('#model').value.trim() || 'claude-sonnet-4-5';
+  const r = await fetch('/api/messages', { method: 'POST', headers: headers(), body: JSON.stringify({ model, max_tokens, system, messages: [{ role: 'user', content }] }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    const msg = (j.error && j.error.message) || ('HTTP ' + r.status);
+    if (r.status === 401) { $('#panelWrap').open = true; $('#settings').open = true; }
+    throw new Error(msg);
+  }
+  return (j.content || []).filter(c => c.type === 'text').map(c => c.text).join('');
+}
+function parseJson(s) {
+  const a = s.indexOf('{'), b = s.lastIndexOf('}');
+  if (a < 0 || b < a) throw new Error('모델 응답에서 JSON을 못 찾았어요.');
+  return JSON.parse(s.slice(a, b + 1));
+}
+function paperBlock() {
+  if (S.pdf) return { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: S.pdf.b64 }, cache_control: { type: 'ephemeral' } };
+  if (S.thread && S.thread.paper_text) return { type: 'text', text: `<paper>\n${S.thread.paper_text}\n</paper>`, cache_control: { type: 'ephemeral' } };
+  return null;
+}
+
+$('#gen').onclick = async () => {
+  if (!S.pdf || S.busy) return;
+  S.busy = true; showErr('');
+  const btn = $('#gen'); btn.disabled = true; btn.textContent = 'Reading the paper…';
+  const tone = toneObj(), langV = S.lang;
+  const langRule = langV === 'ko' ? 'Write all posts in Korean.' : langV === 'en' ? 'Write all posts in English.' : 'Write in the same language the paper is written in.';
+  const system = `You turn an academic paper into an X (Twitter) thread that a real account would post, plus the account itself and believable engagement numbers.
+
+${ANTI_SLOP}
+
+Community vibe: ${tone.label}. ${tone.guide}
+Poster: ${PERSONA[$('#persona').value]}.
+Length: ${LENGTH[$('#length').value]}.
+${langRule}
+
+Content rules:
+- Be faithful to the paper. Use its real numbers, names and findings. Never invent results. Mention the paper title in the first post.
+- First post is the hook. Cover what was asked, how, the main findings, one surprising/fun detail, limitations, and what it means.
+- Each post fits in one tweet (Korean ≤ 140 chars, English ≤ 280 chars). Number posts at the start or end ("1/", "2/" or "1/8").
+- Engagement metrics: plausible for the topic's niche and account size. First post highest, later posts decaying. views ≫ likes > reposts > replies.
+- Also invent 3–4 other accounts ("cast") who would plausibly hang around replies (a skeptic, a fan, a newbie, an expert...). Each gets a short persona.
+
+Output ONLY a JSON object, no code fences:
+{"lang":"ko"|"en","paper_title":string,"author":{"name":string,"handle":string(lowercase ascii/underscore, ≤15),"emoji":string(1 emoji for pfp),"colors":[hex,hex],"verified":boolean},"posted_hours_ago":int(1-20),"posts":[{"text":string,"metrics":{"replies":int,"reposts":int,"likes":int,"bookmarks":int,"views":int}}],"cast":[{"name":string,"handle":string,"emoji":string,"colors":[hex,hex],"persona":string}]}`;
+  try {
+    const out = await claude({ system, content: [paperBlock(), { type: 'text', text: 'Make the thread for this paper.' }] });
+    const j = parseJson(out);
+    const hrs = j.posted_hours_ago || 3;
+    S.thread = {
+      lang: j.lang === 'en' ? 'en' : 'ko', paper_title: j.paper_title, tone: tone.id, toneGroup: tone.group,
+      author: { verified: true, ...j.author }, cast: j.cast || [],
+      posted_at: new Date(Date.now() - hrs * 36e5).toISOString(), ago: (j.lang === 'en' ? hrs + 'h' : hrs + '시간'),
+      posts: (j.posts || []).map(p => ({ id: uid(), text: p.text, metrics: p.metrics || {}, replies: [] })),
+    };
+    if (!S.thread.posts.length) throw new Error('빈 스레드가 왔어요. 다시 시도해 주세요.');
+    S.open.clear(); S.expandAll = false; S.composerFor = null;
+    save(); render();
+    $('#noteText').textContent = '이름, 핸들, 글을 눌러서 수정할 수 있어요. 💬를 누르면 멘션으로 질문할 수 있어요.';
+    if (matchMedia('(max-width:900px)').matches) { $('#panelWrap').open = false; $('.timeline').scrollIntoView({ behavior: 'smooth' }); }
+  } catch (err) { showErr('생성 실패: ' + err.message); }
+  finally { S.busy = false; btn.disabled = !S.pdf; btn.textContent = 'Generate thread'; }
+};
+
+/* ---------- reply / Q&A ---------- */
+function chainText(nodeId) {
+  const path = []; let cur = findNode(nodeId);
+  while (cur) { path.unshift(cur.node); cur = cur.parent ? findNode(cur.parent.id) : null; }
+  return path.map(n => `@${acc(n.by).handle} (${acc(n.by).name}): ${n.text}`).join('\n');
+}
+async function sendReply(targetId) {
+  const ta = $('#cmpText'); if (!ta) return;
+  const text = ta.value.trim(); if (!text || text.replace(/@\w+/g, '').trim() === '') { ta.focus(); return; }
+  const f = findNode(targetId); if (!f) return;
+  const en = lang() === 'en';
+  const mine = { id: uid(), by: 'me', text, ago: en ? '1m' : '1분', metrics: {}, replies: [] };
+  f.node.replies = f.node.replies || []; f.node.replies.push(mine);
+  S.composerFor = null; S.draft = null;
+  const rp = rootPostOf(targetId); if (rp) S.open.add(rp.id);
+  save(); render();
+
+  const known = accounts().map(a => a.handle);
+  let responders = [...new Set((text.match(/@([A-Za-z0-9_]+)/g) || []).map(m => m.slice(1)).filter(h => known.includes(h)))];
+  if (!responders.length) { const by = f.node.by || S.thread.author.handle; responders = [by === 'me' ? S.thread.author.handle : by]; }
+
+  for (const h of responders) {
+    S.typingFor = mine.id; render();
+    try {
+      const reply = await askAs(h, mine.id);
+      mine.replies.push({ id: uid(), by: h, text: reply, ago: en ? '1m' : '1분', metrics: { likes: Math.floor(Math.random() * 12), views: 40 + Math.floor(Math.random() * 300) }, replies: [] });
+    } catch (err) {
+      showErr('답글 생성 실패: ' + err.message);
+      toast(/API 키/.test(err.message) ? 'API 키가 필요해요 (위쪽 설정)' : '답글 생성 실패');
+      if (!mine.replies.length) {
+        f.node.replies = f.node.replies.filter(r => r !== mine);
+        S.composerFor = targetId; S.draft = text;
+        return;
+      }
+      break;
+    } finally { S.typingFor = null; save(); render(); }
+  }
+}
+async function askAs(handle, myNodeId) {
+  const t = S.thread, who = acc(handle), isAuthor = handle === t.author.handle;
+  const tg = t.toneGroup || (lang() === 'en' ? 'en' : 'ko'), tone = (TONES[tg] || TONES.ko).find(x => x[0] === (t.tone || 'auto')) || TONES.ko[0];
+  const system = `You are @${who.handle} ("${who.name}") on X. ${isAuthor ? 'You posted the thread below about the paper.' : `Persona: ${who.persona || 'a follower who knows this field'}.`}
+Someone (@me) mentioned you with a question. Reply as yourself in one tweet (Korean ≤ 140자 or English ≤ 280 chars; up to ~2x if the question really needs it).
+
+${ANTI_SLOP}
+Vibe: ${tone[1]}. ${tone[2]}
+Language: ${lang() === 'en' ? 'English' : 'Korean'}.
+
+Rules:
+- Ground your answer in the paper. If the paper doesn't cover it, say so casually ("논문엔 따로 없긴 한데…") and give your best honest take.
+- If the asker is wrong or exaggerating, push back with what the paper actually says.
+- Start with "@me ". Output only the reply text.`;
+  const thread = t.posts.map((p, i) => `[${i + 1}] ${p.text}`).join('\n\n');
+  const content = [];
+  const pb = paperBlock(); if (pb) content.push(pb);
+  content.push({ type: 'text', text: `Thread by @${t.author.handle}:\n${thread}\n\nConversation so far:\n${chainText(myNodeId)}\n\nWrite @${who.handle}'s reply.` });
+  const out = await claude({ system, content, max_tokens: 800 });
+  return out.trim().replace(/^["“]|["”]$/g, '');
+}
+
+$('#resetPreset').onclick = () => {
+  if (!window.PRESET) return;
+  S.thread = structuredClone(window.PRESET); S.pdf = null; S.open.clear(); S.expandAll = false; S.composerFor = null;
+  localStorage.removeItem(LS.thread); render(); toast('예시 스레드를 불러왔어요');
+};
+
+/* ---------- boot ---------- */
+(async function boot() {
+  fillTones();
+  if (window.STATIC) {
+    document.body.classList.add('static');
+    $('#noteText').textContent = '노브레인 보고서를 스레드로 정리했어요. 위에서 말투를 바꿔 볼 수 있어요.';
+    loadVariant(location.hash.slice(1) || 'x');
+    return;
+  }
+  try { const c = await (await fetch('/api/config')).json(); S.serverKey = !!c.hasServerKey; } catch {}
+  if (S.serverKey) $('#keyHint').textContent = '서버(.env)에 키가 있어서 비워 둬도 돼요.';
+  let saved = null; try { saved = JSON.parse(localStorage.getItem(LS.thread) || 'null'); } catch {}
+  S.thread = saved || (window.PRESET ? structuredClone(window.PRESET) : null);
+  if (matchMedia('(max-width:900px)').matches) $('#panelWrap').open = false;
+  render();
+  if (S.serverKey || $('#key').value) loadModels();
+})();
+</script>
+</body>
+</html>
